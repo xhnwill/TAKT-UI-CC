@@ -27,6 +27,11 @@ const os = require('node:os');
 const path = require('node:path');
 
 const cfg = require('../config');
+const platform = require('../lib/platform');
+const { TunnelManager } = require('../lib/ssh-tunnels');
+const { AsyncLocalStorage } = require('node:async_hooks');
+const requestNode = new AsyncLocalStorage();
+const windowsTools = require('./windows-tools');
 
 const MAC_WORK_DIR = cfg.DEFAULT_WORK_DIR;
 const NODES_CONFIG_PATH = cfg.NODES_FILE;
@@ -37,6 +42,9 @@ const BIND_HOST = cfg.MCP_HOST;
 const EDA_PORT = cfg.EDA_PORT;
 const SYNCTHING_URL = cfg.SYNCTHING_URL;
 const SSH_SOCKET_DIR = cfg.SSH_SOCKET_DIR;
+const windowsTunnels = new TunnelManager(PORT, EDA_PORT);
+process.on('exit', () => windowsTunnels.stopAll());
+for (const signal of ['SIGTERM', 'SIGINT']) process.on(signal, () => { windowsTunnels.stopAll(); process.exit(0); });
 const MCP_TOKEN = cfg.getMcpToken();
 fs.mkdirSync(SSH_SOCKET_DIR, { recursive: true });
 
@@ -53,11 +61,11 @@ const PATHS = {
   dfuUtil: '/opt/homebrew/bin/dfu-util',
   esptoolPy: path.join(cfg.ESP_PYTHON_ENV, 'bin/esptool.py'),
   espPython: path.join(cfg.ESP_PYTHON_ENV, 'bin/python'),
+  ...(platform.isWindows ? windowsTools.paths() : {}),
 };
 
 fs.mkdirSync(MAC_WORK_DIR, { recursive: true });
 
-let activeMcpNodeId = null;
 
 function loadConfiguredNodes() {
   try {
@@ -84,7 +92,7 @@ function loadConfiguredNodes() {
   ];
 }
 
-function getActiveNodeConfig(nodeId = activeMcpNodeId) {
+function getActiveNodeConfig(nodeId = requestNode.getStore()) {
   const nodes = loadConfiguredNodes();
   if (nodeId) {
     const found = nodes.find((n) => n.id === nodeId || n.sshHost === nodeId || n.localWorkAlias === nodeId);
@@ -146,7 +154,7 @@ function resolveWorkPath(inputPath = '') {
 
 function rewriteScriptPaths(code = '') {
   const node = getActiveNodeConfig();
-  const primaryLocalDir = (node && node.localWorkDir) || MAC_WORK_DIR;
+  const primaryLocalDir = ((node && node.localWorkDir) || MAC_WORK_DIR).split(path.sep).join('/');
   const primaryRemoteDir = ((node && node.remoteWorkDir) || LINUX_WORK_DIR).replace(/\/+$/, '');
   let out = String(code);
   if (primaryRemoteDir && primaryRemoteDir !== '/root/work') {
@@ -159,17 +167,15 @@ function rewriteScriptPaths(code = '') {
 }
 
 function runCommand(cmd, args, options = {}) {
+  const spec = platform.commandSpec(cmd, args);
   const timeoutMs = options.timeoutMs || 180000;
   const cwd = options.cwd || MAC_WORK_DIR;
   const isBgSsh = cmd === 'ssh' && Array.isArray(args) && args.includes('-Nf');
   return new Promise((resolve) => {
-    const child = spawn(cmd, args, {
+    const child = spawn(spec.command, spec.args, {
+      windowsHide: true,
       cwd,
-      env: {
-        ...process.env,
-        PATH: `/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:${process.env.PATH || ''}`,
-        ...(options.env || {}),
-      },
+      env: platform.childEnv(options.env),
       stdio: isBgSsh ? 'ignore' : ['ignore', 'pipe', 'pipe'],
     });
     let stdout = '';
@@ -620,6 +626,10 @@ function stripHtmlToText(html = '') {
 // Tool Execution Implementation
 // ============================================================================
 async function executeTool(name, args = {}) {
+  if (platform.isWindows) {
+    const result = await windowsTools.execute(name, args, { runCommand, resolveWorkPath, rewriteScriptPaths, node: getActiveNodeConfig(), paths: PATHS });
+    if (result.handled) return result.output;
+  }
   switch (name) {
     case 'blender_run_python': {
       let scriptPath;
@@ -667,7 +677,7 @@ if scene.render.engine == 'CYCLES':
     scene.cycles.samples = ${samples}
     try:
         prefs = bpy.context.preferences.addons['cycles'].preferences
-        prefs.compute_device_type = 'METAL'
+        prefs.compute_device_type = '${platform.isWindows ? 'CUDA' : 'METAL'}'
         prefs.get_devices()
         for d in prefs.devices:
             d.use = True
@@ -1223,7 +1233,7 @@ async function handleJsonRpc(msg) {
           },
           serverInfo: {
             name: 'mac-industrial-mcp',
-            version: '2.1.0',
+            version: require('../package.json').version,
           },
         },
       };
@@ -1241,7 +1251,7 @@ async function handleJsonRpc(msg) {
       return {
         jsonrpc: '2.0',
         id,
-        result: { tools: TOOLS },
+        result: { tools: platform.isWindows ? windowsTools.describe(TOOLS) : TOOLS },
       };
     }
 
@@ -1566,7 +1576,15 @@ if (process.argv.includes('--stdio')) {
 
     if (urlObj.pathname === '/health') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ ok: true, service: 'mac-industrial-mcp', workDir: MAC_WORK_DIR, tools: TOOLS.length }));
+      res.end(JSON.stringify({ ok: true, service: 'mac-industrial-mcp', workDir: MAC_WORK_DIR, tools: platform.isWindows ? windowsTools.describe(TOOLS).length : TOOLS.length, platform: process.platform, pid: process.pid, dataDir: cfg.TAKT_HOME }));
+      return;
+    }
+
+    if (urlObj.pathname === '/shutdown' && req.method === 'POST') {
+      if (req.headers.authorization !== 'Bearer ' + MCP_TOKEN) { res.writeHead(401); res.end(); return; }
+      windowsTunnels.stopAll();
+      res.writeHead(200); res.end('{"ok":true}');
+      setTimeout(() => process.exit(0), 100);
       return;
     }
 
@@ -1665,14 +1683,7 @@ if (process.argv.includes('--stdio')) {
           const clientId = urlObj.searchParams.get('clientId');
           const sseEntry = clientId ? sseClients.get(clientId) : null;
           const reqNodeId = urlObj.searchParams.get('node') || req.headers['x-takt-node'] || (sseEntry && sseEntry.nodeId) || null;
-          const prevNode = activeMcpNodeId;
-          activeMcpNodeId = reqNodeId;
-          let resp;
-          try {
-            resp = await handleJsonRpc(payload);
-          } finally {
-            activeMcpNodeId = prevNode;
-          }
+          const resp = await requestNode.run(reqNodeId, () => handleJsonRpc(payload));
           if (sseEntry && sseEntry.res && resp) {
             sseEntry.res.write(`event: message\ndata: ${JSON.stringify(resp)}\n\n`);
             res.writeHead(202);
@@ -1724,6 +1735,7 @@ async function ensureEasyEdaBridgeDetailed() {
   const bridgeScript = candidates.find((c) => fs.existsSync(c));
   if (bridgeScript) {
     const child = spawn(process.execPath, [bridgeScript], {
+      windowsHide: true,
       detached: true,
       stdio: 'ignore',
       env: { ...process.env },
@@ -1769,7 +1781,7 @@ const systemStatusState = {
     remoteTunnelOk: false,
     edaBridgeOk: false,
     edaClientConnected: false,
-    tools: TOOLS.length,
+    tools: platform.isWindows ? windowsTools.describe(TOOLS).length : TOOLS.length,
     pingMs: null,
   },
   diskSync: {
@@ -2001,7 +2013,7 @@ function nodeTunnelSock(node) {
 async function probeNode(node, timeoutMs = 5500) {
   const sock = nodeTunnelSock(node);
   const t0 = Date.now();
-  const res = await runCommand('ssh', ['-S', sock, '-o', 'ConnectTimeout=4', node.sshHost, REMOTE_PROBE_CMD], { timeoutMs });
+  const res = await runCommand('ssh', [...(platform.isWindows ? ['-o', 'BatchMode=yes', '-o', 'ClearAllForwardings=yes'] : ['-S', sock]), '-o', 'ConnectTimeout=4', node.sshHost, REMOTE_PROBE_CMD], { timeoutMs });
   const rtt = Date.now() - t0;
   let data = null;
   if (res.exitCode === 0 && res.stdout) {
@@ -2012,6 +2024,13 @@ async function probeNode(node, timeoutMs = 5500) {
 
 /** Rebuilds the dedicated MCP reverse-tunnel ControlMaster for one node. Never touches interactive terminals. */
 async function healNodeTunnel(node) {
+  if (platform.isWindows) {
+    windowsTunnels.stop(node.id);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    windowsTunnels.ensure(node);
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    return;
+  }
   const sock = nodeTunnelSock(node);
   await runCommand('ssh', ['-S', sock, '-O', 'exit', node.sshHost], { timeoutMs: 2500 });
   await runCommand('pkill', ['-f', sock], { timeoutMs: 1500 });
@@ -2035,10 +2054,14 @@ async function healNodeTunnel(node) {
 }
 
 async function runSystemWatchdogCycle(forceHeal = false) {
-  if (watchdogRunning && !forceHeal) return;
+  if (watchdogRunning) return;
   watchdogRunning = true;
   try {
     const nodes = loadConfiguredNodes().filter((n) => n.enabled && n.sshHost);
+    if (platform.isWindows) {
+      windowsTunnels.reconcile(nodes);
+      for (const node of nodes) windowsTunnels.ensure(node);
+    }
     const [edaInfo] = await Promise.all([ensureEasyEdaBridgeDetailed(), checkSyncthingStatus(nodes)]);
 
     const nodesStatus = {};
@@ -2096,7 +2119,7 @@ async function runSystemWatchdogCycle(forceHeal = false) {
       remoteTunnelOk: anyMcpOk,
       edaBridgeOk: Boolean(edaInfo.ok && anyEdaOk),
       edaClientConnected: Boolean(edaInfo.edaConnected),
-      tools: TOOLS.length,
+      tools: platform.isWindows ? windowsTools.describe(TOOLS).length : TOOLS.length,
       pingMs: bestPing,
     };
     if (firstData && firstData.usage) systemStatusState.claudeUsage = firstData.usage;

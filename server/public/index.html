@@ -49,7 +49,7 @@
       --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.45);
       --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.65);
 
-      --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", sans-serif;
+      --font-sans: "Segoe UI", "Microsoft YaHei UI", "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", sans-serif;
       --font-mono: "JetBrains Mono", "SF Mono", "Menlo", "Monaco", monospace;
 
       --left-width: 276px;
@@ -1668,6 +1668,7 @@
             <span>TAKT</span>
           </div>
           <div class="header-actions">
+            <button class="btn" id="btnLocalTerminal" title="打开本机终端，检查 SSH、密钥和本机工具">本机终端</button>
             <button class="btn btn-icon btn-ghost" id="btnOpenNodeManager" title="管理 Linux 节点 (work / work2 / Syncthing / MCP)">
               <svg class="icon" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
             </button>
@@ -1718,7 +1719,7 @@
               <span>终端</span>
             </button>
 
-            <button class="btn btn-icon" id="btnPopSystemTerminal" title="在 macOS 原生 Terminal.app 中弹出当前会话">
+            <button class="btn btn-icon" id="btnPopSystemTerminal" title="在系统终端中弹出当前会话">
               <svg class="icon" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
             </button>
 
@@ -1791,9 +1792,9 @@
             <button class="btn btn-icon" id="btnToggleAllDirs" title="折叠 / 展开全部子目录">
               <svg class="icon" viewBox="0 0 24 24"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>
             </button>
-            <button class="btn" id="btnOpenFinder" title="在 macOS Finder 中定位当前文件/目录">
+            <button class="btn" id="btnOpen文件管理器" title="在文件管理器中定位当前文件/目录">
               <svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M2 9V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H20a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-1"/><path d="M2 13h10"/><path d="m9 16 3-3-3-3"/></svg>
-              <span>Finder</span>
+              <span>文件管理器</span>
             </button>
             <button class="btn btn-icon" id="btnRefreshFiles" title="刷新目录树">
               <svg class="icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
@@ -1898,7 +1899,7 @@
     </form>
   </dialog>
 
-  <!-- Modal Dialog: Multi-Linux Node Manager (work / work2 / Syncthing / Mac MCP Bridge) -->
+  <!-- Modal Dialog: Multi-Linux Node Manager (work / work2 / Syncthing / 本机 MCP Bridge) -->
   <dialog id="nodeManagerDialog" class="ag-dialog" closedby="any" aria-labelledby="nodeManagerDialogTitle" style="width: 520px;">
     <form method="dialog" class="dialog-box" id="nodeManagerForm">
       <div style="display:flex; align-items:center; justify-content:space-between;">
@@ -1913,7 +1914,7 @@
       </div>
 
       <div style="font-size:11px; color:var(--text-secondary); line-height:1.45;">
-        每台 Linux 独立绑定本地一个目录（如 <code>work</code>、<code>work2</code>），保存后自动创建本地目录、注册 Syncthing 双向同步，并建立专用逆向隧道使该机器直接调用本机 Mac 的 21 个 MCP 工具。
+        每台 Linux 独立绑定本地一个目录（如 <code>work</code>、<code>work2</code>），保存后自动创建本地目录、注册 Syncthing 双向同步，并建立专用逆向隧道使该机器直接调用本机 的 MCP 工具。
       </div>
 
       <div class="node-manager-list scroller" id="nodeManagerList"></div>
@@ -1932,7 +1933,7 @@
             <input type="text" class="dialog-input" id="nodeInputBadge" placeholder="LX-2" maxlength="8" required />
           </div>
           <div>
-            <div style="font-size:10.5px; color:var(--text-muted); margin-bottom:3px;">Mac 本地文件夹</div>
+            <div style="font-size:10.5px; color:var(--text-muted); margin-bottom:3px;">本地文件夹</div>
             <input type="text" class="dialog-input" id="nodeInputAlias" placeholder="work2" pattern="[a-zA-Z0-9_-]+" required />
           </div>
         </div>
@@ -1951,7 +1952,7 @@
 
         <label style="display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-secondary); cursor:pointer;">
           <input type="checkbox" id="nodeInputEnabled" checked />
-          <span>启用此 Linux 节点的 SSH 扫描与 Mac MCP 逆向隧道 (:18765 / :49620)</span>
+          <span>启用此 Linux 节点的 SSH 扫描与 本机 MCP 逆向隧道 (:18765 / :49620)</span>
         </label>
       </div>
 
@@ -2137,7 +2138,7 @@
 
       function setTerminalEngine(mode) {
         if (mode === 'native' && !hasNativeHost) {
-          showToast('当前在外部浏览器运行，已调用系统 Terminal.app 打开原生窗口');
+          showToast('当前在外部浏览器运行，已调用系统 系统终端 打开原生窗口');
           popCurrentSessionInSystemTerminal();
           return;
         }
@@ -2706,7 +2707,7 @@
                 <span class="machine-badge secondary">${escapeHtml(activeNode.badge)} · 待接入 SSH</span>
               </div>
               <div style="font-size:11px; color:var(--text-secondary); line-height:1.45;">
-                本地同步目录 <code>${escapeHtml(activeNode.localWorkDir)}</code> 已就绪。点击下方按钮选择这台 Linux 的 SSH Host，即可自动打通 Mac MCP 逆向隧道与 Syncthing 同步。
+                本地同步目录 <code>${escapeHtml(activeNode.localWorkDir)}</code> 已就绪。点击下方按钮选择这台 Linux 的 SSH Host，即可自动打通 本机 MCP 逆向隧道与 Syncthing 同步。
               </div>
               <button class="btn btn-primary" id="btnBannerBindSsh" style="align-self:flex-start; margin-top:2px;">配置此节点 SSH 与同步</button>
             `;
@@ -2734,7 +2735,7 @@
           totalSessions += sessCount;
           const isCollapsed = collapsedProjects.has(folderKey);
           const badgeText = `${folder.nodeBadge || 'LX-1'} · ${folder.localWorkAlias || 'work'}`;
-          const mappingTitle = `${folder.nodeName || folder.nodeId} (${folder.sshHost || '未配SSH'}:${folder.path} <-> Mac ${folder.localPath || folder.localWorkDir})`;
+          const mappingTitle = `${folder.nodeName || folder.nodeId} (${folder.sshHost || '未配SSH'}:${folder.path} <-> 本机 ${folder.localPath || folder.localWorkDir})`;
 
           if (selectedNodeFilter === 'all' && folder.nodeId !== lastSectionNodeId) {
             lastSectionNodeId = folder.nodeId;
@@ -3011,7 +3012,7 @@
         const node = getNodeInfo(nodeId);
         const resolvedNodeId = node.id;
         const resolvedBadge = nodeBadge || node.badge || 'LX-1';
-        const resolvedSshHost = sshHost || node.sshHost || '';
+        const resolvedSshHost = mode === 'local' ? '' : sshHost || node.sshHost || '';
         const resolvedAlias = localWorkAlias || node.localWorkAlias || 'work';
 
         const stage = document.getElementById('terminalStage');
@@ -3025,12 +3026,13 @@
         stage.appendChild(wrapEl);
 
         const term = new window.Terminal({
-          fontFamily: '"JetBrains Mono", "SF Mono", "Menlo", "PingFang SC", monospace',
+          fontFamily: '"Cascadia Mono", "Consolas", "JetBrains Mono", "SF Mono", "Menlo", "PingFang SC", monospace',
           fontSize: 13,
           lineHeight: 1.4,
           cursorBlink: true,
           cursorStyle: 'block',
           allowProposedApi: true,
+          screenReaderMode: true,
           scrollback: 10000,
           theme: CODEX_DARK_TERM_THEME,
         });
@@ -3174,7 +3176,7 @@
             if (cmdBar && cwdText && cmdText) {
               cmdBar.style.display = 'flex';
               cwdText.textContent = `[${t.nodeBadge || 'LX-1'} · ${t.sshHost || ''}] ${t.cwd}`;
-              cmdText.textContent = t.resume ? `claude -r ${t.sessionId}` : 'claude';
+              cmdText.textContent = t.mode === 'local' ? (navigator.userAgent.includes('Windows') ? '$PSVersionTable.PSVersion' : 'pwd') : t.resume ? `claude -r ${t.sessionId}` : 'claude';
             }
             if (terminalEngine === 'native' && hasNativeHost) {
               postNativeMessage({
@@ -3274,7 +3276,7 @@
       // ============================================================================
       // 8. Right Panel: Collapsible & Drag-and-Drop File Tree + Previewer (Mac Local Path Priority)
       // ============================================================================
-      function toLocalMacPath(p, nodeId = currentFilesNodeId) {
+      function toLocalPath(p, nodeId = currentFilesNodeId) {
         const node = getNodeInfo(nodeId);
         const localRoot = node.localWorkDir || '';
         const remoteRoot = (node.remoteWorkDir || '/root/work').replace(/\/+$/, '') || '/root/work';
@@ -3295,7 +3297,7 @@
         currentFilesCwd = cwd || '/root/work';
         currentFilesNodeId = nodeId || currentFilesNodeId || 'node-1';
         const activeNode = getNodeInfo(currentFilesNodeId);
-        document.getElementById('currentSessionCwdLabel').textContent = toLocalMacPath(currentFilesCwd, currentFilesNodeId);
+        document.getElementById('currentSessionCwdLabel').textContent = toLocalPath(currentFilesCwd, currentFilesNodeId);
         const badgeEl = document.getElementById('rightNodeBadge');
         if (badgeEl && activeNode) {
           badgeEl.textContent = `${activeNode.badge} · ${activeNode.localWorkAlias}`;
@@ -3345,8 +3347,19 @@
       });
 
       function shellEscapePath(p) {
-        if (/^[a-zA-Z0-9_./-]+$/.test(p)) return p;
-        return `'${String(p).replace(/'/g, `'\\''`)}'`;
+        const tab = tabs.get(activeTabId);
+        let value = String(p);
+        if (tab?.mode === 'local' && navigator.userAgent.includes('Windows')) return "'" + value.replaceAll("'", "''") + "'";
+        for (const node of nodesData) {
+          const root = String(node.localWorkDir || '').replaceAll('\\', '/').replace(/\/+$/, '');
+          const clean = value.replaceAll('\\', '/');
+          if (root && (clean.toLowerCase() === root.toLowerCase() || clean.toLowerCase().startsWith(root.toLowerCase() + '/'))) {
+            value = (node.remoteWorkDir || '/root/work').replace(/\/+$/, '') + clean.slice(root.length);
+            break;
+          }
+        }
+        if (/^[a-zA-Z0-9_./-]+$/.test(value)) return value;
+        return "'" + value.replaceAll("'", "'\\''") + "'";
       }
 
       function renderFileTree() {
@@ -3485,7 +3498,7 @@
         document.getElementById('fileCountLabel').textContent = `${count} 项`;
 
         if (count === 0) {
-          container.innerHTML = '<div class="preview-empty">当前目录为空 (可从 Finder 拖拽文件至此上传)</div>';
+          container.innerHTML = '<div class="preview-empty">当前目录为空 (可从 文件管理器 拖拽文件至此上传)</div>';
         }
       }
 
@@ -3516,7 +3529,7 @@
           return;
         }
 
-        // External files dropped from macOS Finder
+        // External files dropped from macOS 文件管理器
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
           await uploadExternalFilesToDir(e.dataTransfer.files, targetDirPath);
         }
@@ -3665,7 +3678,7 @@
         const titleEl = document.getElementById('previewTitle');
         const actionsEl = document.getElementById('previewActions');
         const bodyEl = document.getElementById('previewBody');
-        const localDisplayPath = toLocalMacPath(filePath);
+        const localDisplayPath = toLocalPath(filePath);
 
         titleEl.textContent = name || (localDisplayPath ? localDisplayPath.split('/').pop() : '跳过预览');
         actionsEl.innerHTML = '';
@@ -3676,18 +3689,18 @@
             <div style="font-weight:600; color:var(--text-primary); font-size:12.5px; word-break:break-all;">${escapeHtml(name || localDisplayPath)}</div>
             <div style="font-size:11px; color:var(--text-secondary); line-height:1.5;">${escapeHtml(reason || '此文件不支持直接预览')}</div>
             <div style="font-size:10.5px; font-family:var(--font-mono); color:var(--text-muted);">
-              ${size != null ? `大小: ${formatBytes(size)} · ` : ''}Mac 本地路径: ${escapeHtml(localDisplayPath)}
+              ${size != null ? `大小: ${formatBytes(size)} · ` : ''}本地路径: ${escapeHtml(localDisplayPath)}
             </div>
             <div style="display:flex; gap:8px; margin-top:4px;">
-              <button class="btn" id="btnCardOpenFinder">在 Finder 中定位</button>
+              <button class="btn" id="btnCardOpen文件管理器">在 文件管理器 中定位</button>
               <button class="btn btn-primary" id="btnCardInjectPath">&gt;_ 注入终端</button>
             </div>
           </div>
         `;
 
-        const btnFinder = document.getElementById('btnCardOpenFinder');
-        if (btnFinder) {
-          btnFinder.addEventListener('click', () => {
+        const btn文件管理器 = document.getElementById('btnCardOpen文件管理器');
+        if (btn文件管理器) {
+          btn文件管理器.addEventListener('click', () => {
             fetch('/api/open-finder', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -3829,7 +3842,7 @@
             return;
           }
 
-          const localDisplayPath = toLocalMacPath(data.localPath || data.path || filePath);
+          const localDisplayPath = toLocalPath(data.localPath || data.path || filePath);
           titleEl.textContent = data.name || localDisplayPath;
           titleEl.title = localDisplayPath;
 
@@ -3859,7 +3872,7 @@
 
           if (data.kind === 'html') {
             const sep = data.rawUrl.includes('?') ? '&' : '?';
-            bodyEl.innerHTML = `<iframe class="preview-iframe" src="${data.rawUrl}${sep}theme=dark"></iframe>`;
+            bodyEl.innerHTML = `<iframe class="preview-iframe" sandbox="allow-scripts allow-forms" src="${data.rawUrl}${sep}theme=dark"></iframe>`;
             return;
           }
 
@@ -3993,7 +4006,7 @@
         await fetch('/api/open-system-terminal', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tabId: t.tabId, cwd: t.cwd, nodeId: t.nodeId || currentFilesNodeId }),
+          body: JSON.stringify({ tabId: t.tabId, cwd: t.cwd, nodeId: t.nodeId || currentFilesNodeId, mode: t.mode }),
         });
       }
 
@@ -4016,7 +4029,7 @@
       document.getElementById('btnRefreshFiles').addEventListener('click', () => loadSessionFiles(currentFilesCwd, currentFilesNodeId));
       document.getElementById('fileSearchInput').addEventListener('input', () => renderFileTree());
 
-      document.getElementById('btnOpenFinder').addEventListener('click', async () => {
+      document.getElementById('btnOpen文件管理器').addEventListener('click', async () => {
         await fetch('/api/open-finder', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -4203,7 +4216,7 @@
                 <span>${escapeHtml(n.name)}</span>
               </div>
               <div class="node-card-meta">
-                SSH: ${escapeHtml(n.sshHost || '未绑定 (仅 Mac 本地目录已就绪)')} · 本地: ~/.takt-ai/${escapeHtml(alias)} · Syncthing: ${escapeHtml(n.syncthingFolderId)}
+                SSH: ${escapeHtml(n.sshHost || '未绑定 (仅 本地目录已就绪)')} · 本地: ~/.takt-ai/${escapeHtml(alias)} · Syncthing: ${escapeHtml(n.syncthingFolderId)}
               </div>
             </div>
             <div style="display:flex; gap:6px; align-items:center;">
@@ -4351,6 +4364,10 @@
       });
 
       // Initial Boot
+      document.getElementById('btnLocalTerminal').addEventListener('click', () => {
+        const node = getNodeInfo(currentFilesNodeId);
+        openOrSwitchTerminalTab({ tabId: `local-${Date.now()}`, title: '本机终端', cwd: node.remoteWorkDir || '/root/work', nodeId: node.id, mode: 'local', resume: false });
+      });
       loadProjectTree();
       loadSessionFiles('/root/work', 'node-1');
       pollStatusBar();
