@@ -1,17 +1,17 @@
 # Windows 11 使用与交付
 
-版本：1.1.0；构建日期：2026-10-24。目标：Windows 11 x64。
+版本：1.1.1；构建日期：2026-10-24。目标：Windows 11 x64。
 
 ## 安装与启动
 
-推荐运行 `dist/windows/TAKT-UI-CC-Setup-1.1.0-x64.exe`，安装时可选择目录并创建桌面/开始菜单快捷方式。也可双击便携版 `TAKT-UI-CC-1.1.0-win-x64.exe`。
+推荐运行 `dist/windows/TAKT-UI-CC-Setup-1.1.1-x64.exe`，安装时可选择目录并创建桌面/开始菜单快捷方式。也可双击便携版 `TAKT-UI-CC-1.1.1-win-x64.exe`。
 
 安装包包含 Electron、Node.js 和 Windows node-pty/ConPTY 运行时，不需要 WSL、Git Bash 或另装 Node.js。SSH 使用 Windows 的 OpenSSH 客户端；本机目标软件、Syncthing、Tailscale 均独立安装。安装包未配置代码签名证书。
 
 源码运行需要 Node.js ≥22.13 和 npm。在项目目录双击 `start-windows.cmd`，首次启动会安装锁定的依赖；也可执行：
 
 ```powershell
-git clone https://github.com/xiaohn126/TAKT-UI-CC.git
+git clone https://github.com/xhnwill/TAKT-UI-CC.git
 cd TAKT-UI-CC
 npm ci
 npm run desktop

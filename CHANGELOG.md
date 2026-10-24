@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1 — 2026-10-24
+
+- Point the Windows source and clone instructions at the user-owned xhnwill/TAKT-UI-CC fork.
+- Align desktop, backend and macOS shell version metadata with the corrected repository handoff; preserve the Windows runtime and dependency-packaging fixes.
+
 ## 1.1.0 — 2026-10-24
 
 - Add a Windows 11 x64 Electron desktop, NSIS installer, portable EXE and double-click source launcher; bundle Node.js and production ConPTY dependencies.

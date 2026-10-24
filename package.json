@@ -1,6 +1,6 @@
 {
   "name": "takt-ui-cc",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "buildDate": "2026-10-24",
   "description": "TAKT-UI-CC: a multi-machine desktop workbench for Claude Code over SSH — project/session sidebar, persistent tmux terminals, local file preview, Syncthing sync and a reverse-tunnelled local MCP server.",
   "license": "MIT",

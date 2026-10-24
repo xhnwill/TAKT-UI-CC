@@ -1,5 +1,13 @@
 # 项目日志
 
+## 2026-10-24 — 1.1.1 用户仓库交付
+
+按用户指定，将 Git origin 切换为 https://github.com/xhnwill/TAKT-UI-CC.git；原始上游保留为 upstream。核对该仓库 main 位于原始基线，Windows 11 提交可直接快进合并，不覆盖其他提交。中英文首页和 Windows 指南的源码/克隆链接统一指向用户仓库，应用版本同步为 1.1.1，构建日期保持当天 2026-10-24。
+
+本次仅更正交付仓库和版本元数据，保留 1.1.0 的 Windows 功能及打包依赖修复。已通过 Git Credential Manager 登录 xhnwill 并确认目标仓库写入权限，按快进方式交付 main 与 codex/windows11。
+
+1.1.1 验证：语法检查、ESLint、6 项单元/真实 OpenSSH 隧道测试和服务集成检查全部通过；安装版及便携版构建成功，包内 Node、SQLite、node-pty 和 ws 检查通过。便携 EXE 在限制 PATH、工程外临时解压环境通过项目列表、本机终端实际命令输出、中文文件预览、渲染隔离与退出清理检查，rendererErrors 为 0。便携重复实例和真实 Linux 节点仍未验收。
+
 ## 2026-10-24 — 1.1.0 Windows 11
 
 ### 目标与决策
